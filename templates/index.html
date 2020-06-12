@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+        <link rel="icon" type="image/png" sizes="32x32" href="../static/favicon-32x32.ico">
+        <link rel="icon" type="image/png" sizes="16x16" href="../static/favicon-16x16.ico">
+        <meta name="msapplication-TileColor" content="#ffffff">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="stylesheet" type="text/css" href="../static/css/paper.css">
+        <script src="https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js"></script>
+        <script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+        <script src="https://cdn.bootcss.com/toastr.js/latest/js/toastr.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css">
+
+        <script>
+            var host = "http://47.101.33.252:4869"
+        </script>
+
+        <title>quiz在线答题系统</title>
+    </head>
+    <body>
+        <div class="container paper">
+            <nav class="border split-nav">
+                <div class="nav-brand">
+                    <h3>
+                        <p class="text-primary">📚在线
+                            <span class="text-secondary">答题</span>
+                        </p>
+                    </h3>
+                </div>
+                <div class="collapsible">
+                    <div class="collapsible-body">
+                        <ul class="inline">
+                            <li>想要在疫情宅家期间学习数据库知识、提升代码能力？</li><br/>
+                            <li>这是你不容错过的学习平台哦！</li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            <h3>📌简介 - Brief Introduction</h3>
+            <p class="text-primary">
+                Hi！你终于来啦！我们为你准备了一个简单的在线答题系统，在这里，你既可以通过选择速答增长关于数据库的知识，也可以试试我们的acm算法挑战，锻炼代码能力。我们的排行榜等你来刷新！<br/>
+            </p>
+            <h3>🚀让我们开始吧 - Let's Start</h3>
+            账户邮箱: <input type="text" id="name" name="name" value="" style="width: 300px"> <br>
+            账户密码: <input type="password" id="password" name="password" value="" style="width: 300px"> <br>
+            <button id="login">登&ensp;录⚡</button>
+            <button id="signUp">注&ensp;册📨</button>
+            <script>
+                $("#login").click(function () {
+                    var name = $("#name")
+                    var passwd = $("#password")
+                    var accountName = name.val()
+                    var password = passwd.val()
+                    if (!accountName || accountName == "") {
+                        showMsg("请输入用户名");
+                        name.focus();
+                    } else if (!password || password == "") {
+                        showMsg("请输入密码");
+                        passwd.focus();
+                    } else {
+                        //这里为用ajax获取用户信息并进行验证，如果账户密码不匹配则登录失败，如不需要验证用户信息，这段可不写
+                        $.ajax({
+                            url: host + "/auth/login",// 获取自己系统后台用户信息接口
+                            contentType: "application/json; charset=UTF-8",
+                            data: JSON.stringify({
+                                email: accountName,
+                                password: password,
+                            }),
+                            type: "POST",
+                            dataType: "json",
+                            success: function (data, status, request) {
+                                console.log(data)
+                                if (data) {
+                                    if (data.status === 10000) { //判断返回值，这里根据的业务内容可做调整
+                                        var author = request.getResponseHeader("Authorization")
+                                        $.cookie("author", author)
+                                        toastr.success("正在登录中...");
+                                        setTimeout(function () {//做延时以便显示登录状态值\
+                                            window.location.href = "rank.html";//指向登录的页面地址
+                                        }, 1000)
+                                    } else {
+                                        toastr.warning(data.msg);//显示登录失败的原因
+                                        return false;
+                                    }
+                                }
+                            },
+                            error: function (data) {
+                                console.log(data.message);
+                            }
+                        })
+                    }
+                })
+
+                //错误信息提醒
+                function showMsg(msg) {
+                    $("#CheckMsg").text(msg);
+                }
+
+                document.onkeydown = keyDownSearch;
+
+                function keyDownSearch(e) {
+                    // 兼容FF和IE和Opera
+                    var theEvent = e || window.event;
+                    var code = theEvent.keyCode || theEvent.which || theEvent.charCode;
+                    if (code == 13) {
+                        $('#submit').click();//具体处理函数
+                        return false;
+                    }
+                    return true;
+                }
+
+                $("#signUp").click(function () {
+                    window.location.href = "signup.html"
+                })
+            </script>
+        </div>
+    </body>
+</html>

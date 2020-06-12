@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>选择速答</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+        <link rel="icon" type="image/png" sizes="32x32" href="../static/favicon-32x32.ico">
+        <link rel="icon" type="image/png" sizes="16x16" href="../static/favicon-16x16.ico">
+        <meta name="theme-color" content="#ffffff">
+        <script src="https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js"></script>
+        <script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="../static/css/paper.css">
+
+        <link rel="stylesheet" type="text/css" href="../static/css/custom.css">
+
+        <script>
+            var host = "http://47.101.33.252:4869"
+            if ($.cookie("author") === undefined) {
+                window.location.href = "index.html"
+            }
+        </script>
+        <style>
+            #leftTime {
+                float: left;
+                width: 40%;
+                height: 50px;
+                font-size: 30px;
+                text-indent: 2em;
+            }
+
+            #leftTime span {
+                color: red;
+                font-size: 40px;
+            }
+
+            #score {
+                float: left;
+                width: 40%;
+                height: 50px;
+                font-size: 30px;
+                text-indent: 2em;
+            }
+
+            #score span {
+                color: red;
+                font-size: 40px;
+            }
+
+            #show {
+                width: 100%;
+                padding-left: 50px;
+            }
+
+            input[type='radio'] {
+                display: none;
+            }
+
+            input[type='radio']:checked + label {
+                background-color: rgb(229, 218, 68);
+            }
+
+            #options label {
+                margin: 10px auto;
+                display: block;
+                margin-bottom: 20px;
+                padding-left: 20px;
+                border: 1px solid black;
+                border-radius: 10px;
+                line-height: 35px;
+                max-width: 90%;
+            }
+
+            #options label:hover {
+                box-shadow: 0 0 20px 5px rgb(220, 220, 220);
+            }
+
+            #submit {
+                margin-left: 60%;
+            }
+
+            .clearfix::after, .clearfix::before {
+                content: "";
+                display: block;
+                clear: both;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container paper">
+            <div class="clearfix">
+                <p id="leftTime">🕒剩余时间：<span>60</span></p>
+                <p id="score">😏😏当前分数：<span></span></p>
+            </div>
+            <div id="show">
+                <p id="stem"></p>
+                <div id="options"></div>
+                <button id="submit">提&emsp;交</button>
+            </div>
+        </div>
+    </body>
+    <script>
+        var leftTime = document.getElementById("leftTime")
+        var stem = document.getElementById("stem")
+        var options = document.getElementById("options")
+        var scoreNow = document.getElementById("score")
+        var score = 0;
+        var time = 60;
+        setInterval(function () {
+            leftTime.innerHTML = "🕒剩余时间：<span>" + time + "</span>"
+            time--
+            if (time === -1) {
+                window.location.href = "result.html"
+            }
+        }, 1000)
+
+        var showQues = function (question) {
+            if (question.typeId === 2 || question.typeId === 3) {
+                $.cookie("questionId", question.id)
+                stem.innerHTML = question.description
+                options.innerHTML = ""
+                let maxlength = 0
+                for (let i = 0; i < question.optionDTOList.length; i++) {
+                    if (question.optionDTOList[i].description.length > maxlength) {
+                        maxlength = question.optionDTOList[i].description.length
+                    }
+                    options.innerHTML += "<input type='radio' name='option' value='" + question.optionDTOList[i].id + "' id='"
+                        + question.optionDTOList[i].id + "'/>" + "<label for='" + question.optionDTOList[i].id + "'>" +
+                        question.optionDTOList[i].description + "</label>"
+                }
+
+                $("#options label").css("width", maxlength * 20 + 40 + "px")
+            } else if (question.typeId === 3) {
+
+            }
+        }
+
+        var getQues = function () {
+            $.get({
+                url: host + "/api/quiz/list",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("Authorization", $.cookie("author"));
+                },
+                success: function (data) {
+                    if (data.status === 10001) {
+                        alert("你当前不在答题状态，请退出后重试")
+                        window.location.href = 'info.html'
+                    } else {
+                        showQues(data.data)
+                    }
+                },
+                error: function () {
+                    alert("error")
+                }
+            })
+        }
+
+        $.post({
+            url: host + "/api/quiz/start",
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", $.cookie("author"));
+            },
+            success: function (data) {
+                if (data.status === 10001) {
+                    alert("你当前不在答题状态，请退出重试")
+                    window.location.href = "info.html"
+                } else {
+                    if (data.data !== undefined) {
+                        if (typeof data.data !== "number") {
+                            alert("系统检测到你上次答题时意外退出，上次分数为" + data.data.score + ",本次答题将继续上次答题")
+                            score = data.data.score
+                            scoreNow.innerHTML = "😏当前分数：<span>" + score + "</span>"
+                            showQues(data.data.problemOutputDTO)
+                        } else {
+                            let msg = confirm("系统检测到你上次答题时意外退出，上次分数为" + data.data + ",系统已经自动帮你提交，点击确认进行本次答题")
+                            if (msg === true) {
+                                score = 0;
+                                scoreNow.innerHTML = "😏当前分数：<span>" + score + "</span>"
+                                getQues()
+                            } else {
+                                window.location.href = "info.html"
+                            }
+                        }
+                    } else {
+                        score = 0;
+                        scoreNow.innerHTML = "😏当前分数：<span>" + score + "</span>"
+                        getQues()
+                    }
+                }
+            },
+            error: function () {
+                alert("error")
+            }
+        })
+
+        $("#submit").click(function () {
+            let optionId = $('input:radio:checked').val()
+            $.post({
+                url: host + "/api/quiz/validate",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("Authorization", $.cookie("author"));
+                },
+                data: {
+                    pid: $.cookie("questionId"),
+                    optionId: optionId
+                },
+                success: function (data) {
+                    let result = data.data
+                    if (result.result === false) {
+                        $('input[type="radio"]:checked+label').css("backgroundColor", "red")
+                        $('input[type="radio"]:checked+label').css("color", "white")
+
+                        setTimeout(function () {
+                            window.location.href = "result.html"
+                        }, 500)
+                    } else {
+                        score = score + 5;
+                        scoreNow.innerHTML = "😏当前分数：<span>" + score + "</span>"
+                        $('input[type="radio"]:checked+label').css("backgroundColor", "rgb(165, 214, 46)")
+                        $('input[type="radio"]:checked+label').css("color", "white")
+                        setTimeout(function () {
+                            getQues()
+                            time = 60
+                        }, 500)
+                    }
+                },
+                error: function () {
+                    alert("error")
+                }
+            })
+        })
+    </script>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>激活账户</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+        <link rel="icon" type="image/png" sizes="32x32" href="../static/favicon-32x32.ico">
+        <link rel="icon" type="image/png" sizes="16x16" href="../static/favicon-16x16.ico">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="stylesheet" type="text/css" href="../static/css/paper.css">
+        <script src="https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js"></script>
+        <script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+        <script src="https://cdn.bootcss.com/toastr.js/latest/js/toastr.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css">
+
+        <script>
+            var host = "http://47.101.33.252:4869"
+        </script>
+        <style>
+            #submit {
+                background-color: rgb(45, 184, 77);
+                color: white;
+                width: 20%;
+                border: 0.5px solid black;
+                border-radius: 3px;
+                margin-left: 40%;
+                margin-top: 30px;
+            }
+
+            p {
+                text-indent: 2em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container paper">
+            <h2>提示：</h2>
+            <p>欢迎使用quiz答题系统，我们正在尝试激活你的用户，请点击确认键确定激活</p>
+            <button id="submit">确&emsp;&emsp;定</button>
+        </div>
+        <script>
+            var integrityUrl = window.location.href
+
+            function getUrlParam() {
+                var url = location.search; //获取url中"?"符后的字串
+                var theRequest = new Object();
+                if (url.indexOf("?") != -1) {
+                    var str = url.substr(1);
+                    strs = str.split("&");
+                    for (var i = 0; i < strs.length; i++) {
+                        theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+                    }
+                }
+                return theRequest;
+            }
+
+            var request = getUrlParam(integrityUrl)
+            var token = request['token']
+            $("#submit").click(function () {
+                $.post({
+                    url: host + "/auth/activate",
+                    data: {
+                        token: token
+                    },
+                    success: function (data) {
+                        if (data.status === 10000) {
+                            toastr.success("激活成功！")
+                            setTimeout(function () {
+                                window.location.href = "index.html"
+                            }, 1000)
+                        } else if (data.status === 10001) {
+                            toastr.warning("激活码已失效！")
+                        }
+                    },
+                    error: function () {
+                        alert("error")
+                    }
+                })
+            })
+        </script>
+    </body>
+</html>
